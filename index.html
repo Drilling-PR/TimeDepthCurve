@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time x Depth Curve</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Plano x Real</p>
+        <h1>Curva Tempo x Profundidade</h1>
+        <p class="subtitle">Carregue o plano e o CSV da Pason para comparar profundidade por tempo transcorrido desde o spud.</p>
+      </div>
+      <div class="status-card" id="statusCard">
+        <span class="status-dot"></span>
+        <span id="statusText">Aguardando CSV</span>
+      </div>
+    </header>
+
+    <section class="panel controls-panel">
+      <div class="file-grid">
+        <div class="file-box">
+          <label for="planCsvFile">Arquivo CSV do plano</label>
+          <div class="file-input-line">
+            <input id="planCsvFile" type="file" accept=".csv,text/csv" />
+            <span class="saved-file" id="savedPlanFileInfo">Nenhum plano salvo no navegador.</span>
+          </div>
+          <small>Plano: suporta separador <strong>;</strong> ou <strong>,</strong> e números com vírgula decimal.</small>
+        </div>
+
+        <div class="file-box">
+          <label for="realCsvFile">Arquivo CSV real / Pason</label>
+          <div class="file-input-line">
+            <input id="realCsvFile" type="file" accept=".csv,text/csv" />
+            <span class="saved-file" id="savedRealFileInfo">Nenhum real salvo no navegador.</span>
+          </div>
+          <small>Pason: separador por vírgula, decimal com ponto, data + hora em colunas separadas.</small>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <div class="config-block compact-block">
+          <h2>Configuração do plano</h2>
+          <div class="config-grid plan-config-grid">
+            <label>
+              Eixo X / Tempo do plano
+              <select id="planXColumnSelect" disabled></select>
+            </label>
+
+            <label>
+              Eixo Y / Profundidade do plano
+              <select id="planYColumnSelect" disabled></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="config-block compact-block">
+          <h2>Configuração do real / Pason</h2>
+          <div class="config-grid pason-config-grid">
+            <label>
+              Coluna Data
+              <select id="realDateColumnSelect" disabled></select>
+            </label>
+
+            <label>
+              Coluna Hora
+              <select id="realTimeColumnSelect" disabled></select>
+            </label>
+
+            <label>
+              Coluna Hole Depth
+              <select id="realDepthColumnSelect" disabled></select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-block">
+        <h2>Plot</h2>
+        <div class="config-grid plot-config-grid">
+          <label class="spud-field">
+            Spud / Data e hora
+            <input id="spudDateTime" type="datetime-local" />
+          </label>
+
+          <label>
+            Grid X / dias
+            <select id="xGridSelect"></select>
+          </label>
+
+          <label>
+            Grid Y / metros
+            <select id="yGridSelect"></select>
+          </label>
+
+          <div class="button-row">
+            <button id="plotButton" disabled>Plotar curvas</button>
+            <button id="resetButton" class="secondary" disabled>Limpar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel chart-panel">
+        <div class="chart-header">
+          <div>
+            <h2>Time x Depth</h2>
+            <p id="chartHint">As curvas aparecerão aqui após carregar os CSVs.</p>
+          </div>
+          <div class="legend">
+            <span class="line-swatch plan-swatch"></span>
+            <span>Plano</span>
+            <span class="line-swatch real-swatch"></span>
+            <span>Real / Pason</span>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="curveCanvas"></canvas>
+        </div>
+      </article>
+
+      <aside class="panel summary-panel">
+        <h2>Resumo</h2>
+        <dl>
+          <div>
+            <dt>Arquivo plano</dt>
+            <dd id="summaryPlanFileName">-</dd>
+          </div>
+          <div>
+            <dt>Arquivo real</dt>
+            <dd id="summaryRealFileName">-</dd>
+          </div>
+          <div>
+            <dt>Spud</dt>
+            <dd id="summarySpud">-</dd>
+          </div>
+          <div>
+            <dt>Pontos plano</dt>
+            <dd id="validPlanPoints">-</dd>
+          </div>
+          <div>
+            <dt>Pontos real plotados</dt>
+            <dd id="validRealPoints">-</dd>
+          </div>
+          <div>
+            <dt>Tempo real final</dt>
+            <dd id="realMaxTime">-</dd>
+          </div>
+          <div>
+            <dt>Prof. real final</dt>
+            <dd id="realFinalDepth">-</dd>
+          </div>
+          <div>
+            <dt>Prof. projeto</dt>
+            <dd id="projectFinalDepth">-</dd>
+          </div>
+          <div>
+            <dt>Flat time descontado</dt>
+            <dd id="flatTimeDeducted">-</dd>
+          </div>
+          <div class="variance-box">
+            <dt>Diferença atual</dt>
+            <dd id="currentVariance">-</dd>
+          </div>
+          <div>
+            <dt>Referência usada</dt>
+            <dd id="varianceReference">-</dd>
+          </div>
+          <div>
+            <dt>Tempo planejado referência</dt>
+            <dd id="plannedReferenceTime">-</dd>
+          </div>
+        </dl>
+      </aside>
+    </section>
+
+    <section class="panel bottom-workspace">
+      <div class="workspace-grid stacked-workspace">
+        <div class="workspace-card manual-card">
+          <div class="table-header compact-header">
+            <div>
+              <h2>Avaliação rápida manual</h2>
+              <p>Adicione data/hora e profundidade medidas após o último dado da Pason. Se um CSV novo cobrir esse horário, o ponto manual será desconsiderado automaticamente.</p>
+            </div>
+            <button id="addManualPointButton" class="small-button" type="button">Adicionar ponto</button>
+          </div>
+
+          <div class="manual-reference" id="manualReference">Último dado Pason: -</div>
+
+          <div class="table-wrap">
+            <table class="manual-table">
+              <thead>
+                <tr>
+                  <th>Data/hora da captura</th>
+                  <th>Profundidade / m</th>
+                  <th>Tempo acumulado / dias</th>
+                  <th>Status</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="manualPointBody">
+                <tr><td colspan="5" class="empty-row">Nenhum ponto manual cadastrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="workspace-card flat-card">
+          <div class="table-header compact-header">
+            <div>
+              <h2>Flat times reais</h2>
+              <p>Cadastre paradas reais para congelar/descontar a diferença contra o projeto. O fim pode ficar em branco enquanto o flat time estiver aberto.</p>
+            </div>
+            <button id="addFlatTimeButton" class="small-button" type="button">Adicionar flat time</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="flat-table">
+              <thead>
+                <tr>
+                  <th>Descrição breve</th>
+                  <th>Início</th>
+                  <th>Fim</th>
+                  <th>Status</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="flatTimeBody">
+                <tr><td colspan="5" class="empty-row">Nenhum flat time cadastrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
