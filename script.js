@@ -3,6 +3,7 @@ const FLAT_DEPTH_TOLERANCE_M = 1;
 
 const planFileInput = document.getElementById("planCsvFile");
 const realFileInput = document.getElementById("realCsvFile");
+const wellNameInput = document.getElementById("wellNameInput");
 const savedPlanFileInfo = document.getElementById("savedPlanFileInfo");
 const savedRealFileInfo = document.getElementById("savedRealFileInfo");
 
@@ -31,17 +32,13 @@ const statusText = document.getElementById("statusText");
 const chartHint = document.getElementById("chartHint");
 
 const summary = {
-  planFileName: document.getElementById("summaryPlanFileName"),
-  realFileName: document.getElementById("summaryRealFileName"),
+  wellName: document.getElementById("summaryWellName"),
   spud: document.getElementById("summarySpud"),
-  validPlanPoints: document.getElementById("validPlanPoints"),
-  validRealPoints: document.getElementById("validRealPoints"),
   realMaxTime: document.getElementById("realMaxTime"),
   realFinalDepth: document.getElementById("realFinalDepth"),
   projectFinalDepth: document.getElementById("projectFinalDepth"),
   flatTimeDeducted: document.getElementById("flatTimeDeducted"),
   currentVariance: document.getElementById("currentVariance"),
-  varianceReference: document.getElementById("varianceReference"),
   plannedReferenceTime: document.getElementById("plannedReferenceTime"),
 };
 
@@ -81,6 +78,7 @@ addManualPointButton.addEventListener("click", addManualPoint);
 xGridSelect.addEventListener("change", () => { saveState(); if (hasAnyPlottedData()) drawChart(); });
 yGridSelect.addEventListener("change", () => { saveState(); if (hasAnyPlottedData()) drawChart(); });
 spudDateTime.addEventListener("change", () => { saveState(); updateSpudSummary(); if (realRows.length) plotCurves(); });
+wellNameInput.addEventListener("input", () => { saveState(); updateWellSummary(); });
 
 flatTimeBody.addEventListener("input", handleFlatTimeTableChange);
 flatTimeBody.addEventListener("change", handleFlatTimeTableChange);
@@ -841,10 +839,7 @@ function updateSummary() {
   const finalRealPoint = realData[realData.length - 1];
   const variance = calculateCurrentVariance();
 
-  summary.planFileName.textContent = planFileName || "-";
-  summary.realFileName.textContent = realFileName || "-";
-  summary.validPlanPoints.textContent = planData.length || "-";
-  summary.validRealPoints.textContent = realData.length || "-";
+  updateWellSummary();
   summary.projectFinalDepth.textContent = finalPlanPoint ? `${formatRawDepth(finalPlanPoint.rawY)} m` : "-";
   summary.realMaxTime.textContent = finalRealPoint ? `${formatGridNumber(finalRealPoint.x)} dias` : "-";
   summary.realFinalDepth.textContent = finalRealPoint ? `${formatRawDepth(finalRealPoint.rawY)} m` : "-";
@@ -852,18 +847,20 @@ function updateSummary() {
   if (variance) {
     summary.currentVariance.textContent = formatVarianceLabel(variance.deltaDays);
     summary.currentVariance.className = variance.deltaDays > 0 ? "behind" : variance.deltaDays < 0 ? "ahead" : "onplan";
-    summary.varianceReference.textContent = variance.reference;
     summary.plannedReferenceTime.textContent = `${formatTwoDecimals(variance.referenceTime)} dias`;
     summary.flatTimeDeducted.textContent = `${formatTwoDecimals(variance.flatInfo.deductedDays)} dias`;
   } else {
     summary.currentVariance.textContent = "-";
     summary.currentVariance.className = "";
-    summary.varianceReference.textContent = "-";
     summary.plannedReferenceTime.textContent = "-";
     summary.flatTimeDeducted.textContent = "-";
   }
 
   updateSpudSummary();
+}
+
+function updateWellSummary() {
+  summary.wellName.textContent = wellNameInput.value.trim() || "-";
 }
 
 function updateSpudSummary() {
@@ -1097,6 +1094,7 @@ function resetApp() {
   flatTimes = [];
   manualRealPoints = [];
   spudDateTime.value = "";
+  wellNameInput.value = "";
   xGridSelect.value = "4";
   yGridSelect.value = "200";
 
@@ -1135,6 +1133,7 @@ function setStatus(message, type) {
 
 function saveState() {
   const state = {
+    wellName: wellNameInput.value.trim(),
     planFileName,
     planCsvText,
     realFileName,
@@ -1173,6 +1172,7 @@ function loadSavedState() {
     return;
   }
 
+  wellNameInput.value = state.wellName || "";
   spudDateTime.value = state.spudDateTime || "";
   if (state.xGrid) xGridSelect.value = state.xGrid;
   if (state.yGrid) yGridSelect.value = state.yGrid;
@@ -1180,6 +1180,7 @@ function loadSavedState() {
   manualRealPoints = Array.isArray(state.manualRealPoints) ? state.manualRealPoints.map(normalizeManualPoint) : [];
   renderFlatTimes();
   renderManualPoints();
+  updateWellSummary();
   updateSpudSummary();
 
   try {

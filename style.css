@@ -162,11 +162,12 @@ h2 {
 
 .plan-config-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
 .pason-config-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
-.plot-config-grid { grid-template-columns: minmax(340px, 1.3fr) minmax(120px, 0.5fr) minmax(135px, 0.5fr) auto; }
+.plot-config-grid { grid-template-columns: minmax(240px, 1fr) minmax(300px, 1.1fr) minmax(120px, 0.45fr) minmax(135px, 0.45fr) auto; }
 
 input[type="file"],
 input[type="datetime-local"],
 input[type="text"],
+input[type="number"],
 select {
   width: 100%;
   min-height: 48px;
@@ -184,7 +185,8 @@ input[type="file"] {
 
 input[type="datetime-local"] { color-scheme: dark; }
 select:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; }
-.spud-field input { min-width: 300px; }
+.spud-field input { min-width: 280px; }
+.well-field input { min-width: 220px; }
 
 .button-row {
   display: flex;

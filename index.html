@@ -81,6 +81,11 @@
       <div class="config-block">
         <h2>Plot</h2>
         <div class="config-grid plot-config-grid">
+          <label class="well-field">
+            Nome do poço
+            <input id="wellNameInput" type="text" placeholder="Ex.: 7-MGP-XXX-RN" />
+          </label>
+
           <label class="spud-field">
             Spud / Data e hora
             <input id="spudDateTime" type="datetime-local" />
@@ -127,24 +132,12 @@
         <h2>Resumo</h2>
         <dl>
           <div>
-            <dt>Arquivo plano</dt>
-            <dd id="summaryPlanFileName">-</dd>
-          </div>
-          <div>
-            <dt>Arquivo real</dt>
-            <dd id="summaryRealFileName">-</dd>
+            <dt>Poço</dt>
+            <dd id="summaryWellName">-</dd>
           </div>
           <div>
             <dt>Spud</dt>
             <dd id="summarySpud">-</dd>
-          </div>
-          <div>
-            <dt>Pontos plano</dt>
-            <dd id="validPlanPoints">-</dd>
-          </div>
-          <div>
-            <dt>Pontos real plotados</dt>
-            <dd id="validRealPoints">-</dd>
           </div>
           <div>
             <dt>Tempo real final</dt>
@@ -162,17 +155,13 @@
             <dt>Flat time descontado</dt>
             <dd id="flatTimeDeducted">-</dd>
           </div>
-          <div class="variance-box">
-            <dt>Diferença atual</dt>
-            <dd id="currentVariance">-</dd>
-          </div>
-          <div>
-            <dt>Referência usada</dt>
-            <dd id="varianceReference">-</dd>
-          </div>
           <div>
             <dt>Tempo planejado referência</dt>
             <dd id="plannedReferenceTime">-</dd>
+          </div>
+          <div class="variance-box">
+            <dt>Diferença atual</dt>
+            <dd id="currentVariance">-</dd>
           </div>
         </dl>
       </aside>
