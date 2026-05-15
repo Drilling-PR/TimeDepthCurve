@@ -121,6 +121,8 @@
             <span>Plano</span>
             <span class="line-swatch real-swatch"></span>
             <span>Real / Pason</span>
+            <span class="line-swatch projection-swatch"></span>
+            <span>Projeção</span>
           </div>
         </div>
         <div class="canvas-wrap">
@@ -130,6 +132,10 @@
 
       <aside class="panel summary-panel">
         <h2>Resumo</h2>
+        <label class="summary-toggle">
+          <input id="projectionToggle" type="checkbox" />
+          <span>Projetar finalização do poço</span>
+        </label>
         <dl>
           <div>
             <dt>Poço</dt>
@@ -150,6 +156,10 @@
           <div>
             <dt>Prof. projeto</dt>
             <dd id="projectFinalDepth">-</dd>
+          </div>
+          <div class="projection-summary-item">
+            <dt>Data estimada final</dt>
+            <dd id="estimatedEndDate">-</dd>
           </div>
           <div>
             <dt>Flat time descontado</dt>

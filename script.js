@@ -16,6 +16,7 @@ const realDepthColumnSelect = document.getElementById("realDepthColumnSelect");
 const spudDateTime = document.getElementById("spudDateTime");
 const xGridSelect = document.getElementById("xGridSelect");
 const yGridSelect = document.getElementById("yGridSelect");
+const projectionToggle = document.getElementById("projectionToggle");
 const plotButton = document.getElementById("plotButton");
 const resetButton = document.getElementById("resetButton");
 const addFlatTimeButton = document.getElementById("addFlatTimeButton");
@@ -37,6 +38,7 @@ const summary = {
   realMaxTime: document.getElementById("realMaxTime"),
   realFinalDepth: document.getElementById("realFinalDepth"),
   projectFinalDepth: document.getElementById("projectFinalDepth"),
+  estimatedEndDate: document.getElementById("estimatedEndDate"),
   flatTimeDeducted: document.getElementById("flatTimeDeducted"),
   currentVariance: document.getElementById("currentVariance"),
   plannedReferenceTime: document.getElementById("plannedReferenceTime"),
@@ -55,6 +57,7 @@ let realFileName = "";
 let realCsvText = "";
 let flatTimes = [];
 let manualRealPoints = [];
+let projectionData = [];
 
 initGridOptions();
 loadSavedState();
@@ -79,6 +82,7 @@ xGridSelect.addEventListener("change", () => { saveState(); if (hasAnyPlottedDat
 yGridSelect.addEventListener("change", () => { saveState(); if (hasAnyPlottedData()) drawChart(); });
 spudDateTime.addEventListener("change", () => { saveState(); updateSpudSummary(); if (realRows.length) plotCurves(); });
 wellNameInput.addEventListener("input", () => { saveState(); updateWellSummary(); });
+projectionToggle.addEventListener("change", () => { saveState(); plotCurves(); });
 
 if (flatTimeBody) {
   flatTimeBody.addEventListener("input", handleFlatTimeTableChange);
@@ -520,6 +524,7 @@ function getLastPasonElapsedDays(pasonData = null) {
 function plotCurves() {
   planData = buildPlanData();
   realData = buildRealData();
+  projectionData = buildProjectionData();
   renderManualStatusOnly();
 
   if (!planData.length && !realData.length) {
@@ -548,7 +553,7 @@ function drawChart() {
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
 
-  const allData = [...planData, ...realData];
+  const allData = [...planData, ...realData, ...projectionData];
   if (!allData.length) {
     drawEmptyCanvas();
     return;
@@ -589,6 +594,7 @@ function drawChart() {
   }
 
   if (realData.length) drawLineSeries(realData, xToCanvas, yToCanvas, "#fb7185", 2.5, false);
+  if (projectionData.length > 1) drawDashedLineSeries(projectionData, xToCanvas, yToCanvas, "#facc15", 2.5);
 
   ctx.restore();
   drawAxes(width, height, padding, "Tempo (dias)", "Profundidade (m)");
@@ -615,6 +621,31 @@ function drawLineSeries(data, xToCanvas, yToCanvas, color, lineWidth, showPoints
     ctx.arc(cx, cy, 3.1, 0, Math.PI * 2);
     ctx.fill();
   });
+}
+
+function drawDashedLineSeries(data, xToCanvas, yToCanvas, color, lineWidth) {
+  ctx.save();
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = color;
+  ctx.setLineDash([10, 7]);
+  ctx.beginPath();
+  data.forEach((point, index) => {
+    const cx = xToCanvas(point.x);
+    const cy = yToCanvas(point.y);
+    if (index === 0) ctx.moveTo(cx, cy);
+    else ctx.lineTo(cx, cy);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const last = data[data.length - 1];
+  if (last) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(xToCanvas(last.x), yToCanvas(last.y), 4.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawGrid(width, height, padding, minX, maxX, minY, maxY, xStep, yStep, xToCanvas, yToCanvas) {
@@ -749,6 +780,54 @@ function floorToStep(value, step) { return Math.floor(value / step) * step; }
 function ceilToStep(value, step) { return Math.ceil(value / step) * step; }
 function safeRange(min, max) { return max - min === 0 ? 1 : max - min; }
 
+function buildProjectionData() {
+  if (!projectionToggle.checked || !planData.length || !realData.length) return [];
+
+  const actual = realData[realData.length - 1];
+  const plannedTimeAtActualDepth = interpolatePlannedTimeAtDepth(actual.y);
+  const finalPlan = planData[planData.length - 1];
+
+  if (!Number.isFinite(plannedTimeAtActualDepth) || !finalPlan) return [];
+
+  const projected = [{
+    x: actual.x,
+    y: actual.y,
+    rawY: actual.rawY,
+    dateTime: actual.dateTime,
+    source: "projection-start",
+  }];
+
+  planData.forEach((point) => {
+    if (point.x <= plannedTimeAtActualDepth + 1e-9) return;
+    projected.push({
+      x: actual.x + (point.x - plannedTimeAtActualDepth),
+      y: point.y,
+      rawY: point.rawY,
+      source: "projection",
+    });
+  });
+
+  return projected;
+}
+
+function getProjectedEndDate() {
+  if (!projectionToggle.checked || projectionData.length < 2 || !realData.length) return null;
+
+  const actual = realData[realData.length - 1];
+  const projectedEnd = projectionData[projectionData.length - 1];
+  if (!actual.dateTime || !Number.isFinite(projectedEnd.x) || !Number.isFinite(actual.x)) return null;
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const remainingDays = projectedEnd.x - actual.x;
+  if (remainingDays < -1e-9) return null;
+
+  return {
+    date: new Date(actual.dateTime.getTime() + remainingDays * dayMs),
+    remainingDays,
+    projectedEndTime: projectedEnd.x,
+  };
+}
+
 function calculateCurrentVariance() {
   if (!planData.length || !realData.length) return null;
 
@@ -843,6 +922,10 @@ function updateSummary() {
 
   updateWellSummary();
   summary.projectFinalDepth.textContent = finalPlanPoint ? `${formatRawDepth(finalPlanPoint.rawY)} m` : "-";
+
+  const projectedEnd = getProjectedEndDate();
+  summary.estimatedEndDate.textContent = projectedEnd ? `${formatDateTimeForDisplay(projectedEnd.date)} (${formatTwoDecimals(projectedEnd.remainingDays)} dias restantes)` : "-";
+
   summary.realMaxTime.textContent = finalRealPoint ? `${formatGridNumber(finalRealPoint.x)} dias` : "-";
   summary.realFinalDepth.textContent = finalRealPoint ? `${formatRawDepth(finalRealPoint.rawY)} m` : "-";
 
@@ -1123,6 +1206,8 @@ function resetApp() {
   wellNameInput.value = "";
   xGridSelect.value = "4";
   yGridSelect.value = "200";
+  projectionToggle.checked = false;
+  projectionData = [];
 
   [planXColumnSelect, planYColumnSelect, realDateColumnSelect, realTimeColumnSelect, realDepthColumnSelect].forEach((select) => {
     select.innerHTML = "";
@@ -1172,6 +1257,7 @@ function saveState() {
     spudDateTime: spudDateTime.value,
     xGrid: xGridSelect.value,
     yGrid: yGridSelect.value,
+    showProjection: projectionToggle.checked,
     flatTimes,
     manualRealPoints,
   };
@@ -1202,6 +1288,7 @@ function loadSavedState() {
   spudDateTime.value = state.spudDateTime || "";
   if (state.xGrid) xGridSelect.value = state.xGrid;
   if (state.yGrid) yGridSelect.value = state.yGrid;
+  projectionToggle.checked = Boolean(state.showProjection);
   flatTimes = Array.isArray(state.flatTimes) ? state.flatTimes : [];
   manualRealPoints = Array.isArray(state.manualRealPoints) ? state.manualRealPoints.map(normalizeManualPoint) : [];
   renderFlatTimes();

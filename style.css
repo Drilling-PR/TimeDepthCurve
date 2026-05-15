@@ -275,6 +275,10 @@ button.small-button {
 
 .plan-swatch { background: var(--accent); }
 .real-swatch { background: var(--real); }
+.projection-swatch {
+  background: repeating-linear-gradient(90deg, var(--project-depth) 0 10px, transparent 10px 17px);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
 
 .canvas-wrap {
   width: 100%;
@@ -288,6 +292,26 @@ button.small-button {
 canvas { width: 100%; height: 100%; display: block; }
 
 .summary-panel { padding: 18px; }
+.summary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  margin: -2px 0 14px;
+  padding: 9px 11px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.36);
+  color: var(--text);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.summary-toggle input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+}
+.projection-summary-item dd { color: #fde68a; }
 .summary-panel dl { margin: 0; display: grid; gap: 12px; }
 .summary-panel div { padding-bottom: 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.13); }
 .summary-panel dt { color: var(--muted); font-size: 0.86rem; margin-bottom: 2px; }
