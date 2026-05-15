@@ -65,7 +65,7 @@ planFileInput.addEventListener("change", (event) => handleFileUpload(event, "pla
 realFileInput.addEventListener("change", (event) => handleFileUpload(event, "real"));
 plotButton.addEventListener("click", plotCurves);
 resetButton.addEventListener("click", resetApp);
-addFlatTimeButton.addEventListener("click", addFlatTime);
+if (addFlatTimeButton) addFlatTimeButton.addEventListener("click", addFlatTime);
 addManualPointButton.addEventListener("click", addManualPoint);
 
 [planXColumnSelect, planYColumnSelect, realDateColumnSelect, realTimeColumnSelect, realDepthColumnSelect].forEach((select) => {
@@ -80,13 +80,15 @@ yGridSelect.addEventListener("change", () => { saveState(); if (hasAnyPlottedDat
 spudDateTime.addEventListener("change", () => { saveState(); updateSpudSummary(); if (realRows.length) plotCurves(); });
 wellNameInput.addEventListener("input", () => { saveState(); updateWellSummary(); });
 
-flatTimeBody.addEventListener("input", handleFlatTimeTableChange);
-flatTimeBody.addEventListener("change", handleFlatTimeTableChange);
-flatTimeBody.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action='delete-flat']");
-  if (!button) return;
-  deleteFlatTime(button.dataset.id);
-});
+if (flatTimeBody) {
+  flatTimeBody.addEventListener("input", handleFlatTimeTableChange);
+  flatTimeBody.addEventListener("change", handleFlatTimeTableChange);
+  flatTimeBody.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action='delete-flat']");
+    if (!button) return;
+    deleteFlatTime(button.dataset.id);
+  });
+}
 
 manualPointBody.addEventListener("input", handleManualPointTableChange);
 manualPointBody.addEventListener("change", handleManualPointTableChange);
@@ -899,6 +901,7 @@ function handleFlatTimeTableChange(event) {
 }
 
 function renderFlatTimes() {
+  if (!flatTimeBody) return;
   if (!flatTimes.length) {
     flatTimeBody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum flat time cadastrado.</td></tr>';
     return;
@@ -925,6 +928,7 @@ function renderFlatTimes() {
 }
 
 function renderFlatStatusOnly() {
+  if (!flatTimeBody) return;
   flatTimes.forEach((flat) => {
     const status = flatTimeBody.querySelector(`[data-flat-status="${flat.id}"]`);
     if (!status) return;
@@ -949,6 +953,8 @@ function addManualPoint() {
     id: createManualId(),
     captureDateTime: "",
     depth: "",
+    isFlatTime: false,
+    flatTimeDescription: "",
   });
   renderManualPoints();
   saveState();
@@ -968,7 +974,15 @@ function handleManualPointTableChange(event) {
 
   const point = manualRealPoints.find((item) => item.id === id);
   if (!point) return;
-  point[field] = event.target.value;
+
+  if (field === "isFlatTime") {
+    point[field] = event.target.checked;
+    if (!point[field]) point.flatTimeDescription = "";
+    renderManualPoints();
+  } else {
+    point[field] = event.target.value;
+  }
+
   saveState();
   renderManualStatusOnly();
   if (hasAnyData()) plotCurves();
@@ -978,7 +992,7 @@ function renderManualPoints() {
   manualRealPoints = manualRealPoints.map(normalizeManualPoint);
 
   if (!manualRealPoints.length) {
-    manualPointBody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum ponto manual cadastrado.</td></tr>';
+    manualPointBody.innerHTML = '<tr><td colspan="7" class="empty-row">Nenhum ponto manual cadastrado.</td></tr>';
     updateManualReference();
     return;
   }
@@ -996,6 +1010,15 @@ function renderManualPoints() {
         <input type="number" step="0.01" min="0" data-id="${point.id}" data-field="depth" value="${escapeAttribute(point.depth)}" placeholder="Ex.: 1250" />
       </td>
       <td class="manual-elapsed-cell" data-manual-elapsed="${point.id}">${evaluation && Number.isFinite(evaluation.elapsedDays) ? formatTwoDecimals(evaluation.elapsedDays) : "-"}</td>
+      <td class="manual-flat-flag-cell">
+        <label class="flat-flag-control">
+          <input type="checkbox" data-id="${point.id}" data-field="isFlatTime" ${point.isFlatTime ? "checked" : ""} />
+          <span>Flat</span>
+        </label>
+      </td>
+      <td class="manual-flat-days-cell">
+        <input type="text" data-id="${point.id}" data-field="flatTimeDescription" value="${escapeAttribute(point.flatTimeDescription)}" placeholder="Ex.: descida de revestimento" ${point.isFlatTime ? "" : "disabled"} />
+      </td>
       <td><span class="${getManualStatusClass(point)}" data-manual-status="${point.id}">${getManualStatusText(point)}</span></td>
       <td class="action-cell"><button class="danger-button delete-line-button" type="button" data-action="delete-manual" data-id="${point.id}" title="Excluir esta linha manual">Excluir linha</button></td>
     `;
@@ -1058,6 +1081,9 @@ function normalizeManualPoint(point) {
   }
   normalized.captureDateTime = normalized.captureDateTime || "";
   normalized.depth = normalized.depth || "";
+  normalized.isFlatTime = Boolean(normalized.isFlatTime);
+  normalized.flatTimeDescription = normalized.isFlatTime ? (normalized.flatTimeDescription || normalized.flatTimeDays || "") : "";
+  delete normalized.flatTimeDays;
   return normalized;
 }
 

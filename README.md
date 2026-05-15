@@ -144,11 +144,13 @@ Esse ponto muda de status e deixa de entrar no cálculo.
 
 ---
 
-## 8. Flat times reais
+## 8. Flat time nas capturas manuais
 
-Use a área **Flat times reais** para cadastrar períodos sem avanço de profundidade que não devem aumentar artificialmente o atraso.
+Na tabela de **Avaliação rápida manual**, cada ponto pode ser marcado como **Flat time**.
 
-Exemplos:
+Quando o flag estiver ativado, aparece um campo de texto para descrever o motivo do flat time.
+
+Exemplos de descrição:
 
 - descida de revestimento;
 - cimentação;
@@ -157,15 +159,7 @@ Exemplos:
 - manutenção planejada;
 - espera operacional relevante.
 
-Cada flat time possui:
-
-- descrição breve;
-- início;
-- fim.
-
-O campo **fim** pode ficar vazio. Nesse caso, o flat time fica aberto até o momento atual do gráfico.
-
-Durante um flat time, o app desconta esse período do cálculo de atraso/adiantamento.
+Nesta versão, o campo serve para registrar o significado operacional do flat time junto ao ponto manual.
 
 ---
 

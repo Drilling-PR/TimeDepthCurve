@@ -447,3 +447,43 @@ th {
   .canvas-wrap { height: 460px; }
   .table-header button { width: 100%; margin-top: 12px; }
 }
+
+.flat-flag-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  color: var(--text);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.flat-flag-control input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.manual-flat-flag-cell {
+  min-width: 110px;
+}
+
+.manual-flat-days-cell {
+  min-width: 150px;
+}
+
+.manual-flat-days-cell input:disabled {
+  opacity: 0.45;
+}
+
+.manual-table th:nth-child(1) { min-width: 230px; }
+.manual-table th:nth-child(2) { min-width: 190px; }
+.manual-table th:nth-child(3) { min-width: 160px; }
+.manual-table th:nth-child(4) { min-width: 120px; }
+.manual-table th:nth-child(5) { min-width: 160px; }
+.manual-table th:nth-child(6) { min-width: 220px; }
+.manual-table th:nth-child(7) { min-width: 130px; }
